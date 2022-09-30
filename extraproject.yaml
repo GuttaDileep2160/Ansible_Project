@@ -1,0 +1,106 @@
+- name: project Playbook
+  hosts: all
+  become_method: sudo
+  become_user: root
+  become: yes
+
+  vars:
+    package_name: maven
+    pkg_name: openjdk-11-jre-headless 
+    repo_url: https://github.com/amolshete/spring-petclinic.git
+    src_path: /root/project/
+    dest_path: /root/project/target
+
+  tasks:
+    - name: update repo on ubuntu machine
+      apt:
+        name: "*"
+        state: latest
+      when: ansible_distribution=="Ubuntu"
+
+    - name: install "{{ pkg_name }}"
+      apt:
+        name: "{{ pkg_name }}"
+        state: latest
+      when: ansible_distribution=="Ubuntu"
+    
+    - name: clone the repo to locally
+      git:
+        repo: "{{ repo_url }}"
+        dest: "{{ src_path }}"
+        clone: yes
+        update: no
+      when: ansible_distribution=="Ubuntu"
+    
+    - name: install "{{ package_name }}"
+      apt:
+        name: "{{ package_name }}"
+        state: present
+      when: ansible_distribution=="Ubuntu"
+
+    - name: output current working directory
+      shell: pwd
+      register: current_working_directory
+    - debug:
+        var: current_working_directory.stdout
+      run_once: true
+    
+    - name: Build the app to run 
+      shell: cd /root/project; mvn install
+      args:
+        chdir: "{{ src_path }}"
+      when: ansible_distribution=="Ubuntu"
+
+    - name: Run the Java APP on Ubuntu machine
+      shell: cd /root/project/target; nohup java -jar spring-petclinic-2.7.0-SNAPSHOT.jar & exit
+      when: ansible_distribution=="Ubuntu"
+
+    
+    - name: update repo on RedHat machine
+      yum:
+        name: "*"
+        state: latest
+        update_cache: yes
+      when: ansible_distribution=="RedHat"
+
+    - name: install "{{ pkg_name }}"
+      yum:
+        name: "{{ item }}"
+        state: latest
+        update_cache: yes
+      loop: 
+        - java-11-openjdk-devel
+        - git
+      when: ansible_distribution=="RedHat"
+    
+    - name: clone the repo to locally
+      git:
+        repo: "{{ repo_url }}"
+        dest: "{{ src_path }}"
+        clone: yes
+        update: no
+      when: ansible_distribution=="RedHat"
+    
+    - name: install "{{ package_name }}"
+      yum:
+        name: "{{ package_name }}"
+        state: present
+      when: ansible_distribution=="RedHat"
+
+    - name: output current working directory
+      shell: pwd
+      register: current_working_directory
+    - debug:
+        var: current_working_directory.stdout
+      run_once: true
+    
+    - name: Build the app to run 
+      shell: cd /root/project; mvn install
+      args:
+        chdir: "{{ src_path }}"
+      when: ansible_distribution=="RedHat"
+
+    - name: Run the Java APP on RedHat machine
+      shell: cd /root/project/target; nohup java -jar spring-petclinic-2.7.0-SNAPSHOT.jar & exit
+      when: ansible_distribution=="RedHat"
+

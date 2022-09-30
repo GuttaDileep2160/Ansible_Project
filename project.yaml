@@ -1,0 +1,54 @@
+- name: project Playbook
+  hosts: all
+  become_method: sudo
+  become_user: root
+  become: yes
+
+  vars:
+    package_name: java-1.8.0-openjdk
+    pkg_name: default-jre
+    src_path: /root/spring-petclinic/target
+    dest_path: /root/target
+
+
+
+
+  tasks:
+    - name: copy the artifact to Ubuntu machine
+      copy:
+        src: "{{ src_path }}"
+        dest: "{{ dest_path }}"
+      when: ansible_distribution=="Ubuntu"
+    
+    - name: copy the artifact to RedHat machine
+      copy:
+        src: "{{ src_path }}"
+        dest: "{{ dest_path }}"
+      when: ansible_distribution=="RedHat"
+      
+    - name: update repo on ubuntu machine
+      apt:
+        name: "*"
+        state: latest
+      when: ansible_distribution=="Ubuntu"
+    - name: install "{{ pkg_name }}"
+      apt:
+        name: "{{ pkg_name }}"
+      when: ansible_distribution=="Ubuntu"
+    - name: update repo on RedHat machine
+      yum:
+        name: "*"
+        state: latest
+      when: ansible_distribution=="RedHat"
+    - name: install java-1.8.0-openjdk
+      yum:
+        name: "{{ package_name }}"
+      when: ansible_distribution=="RedHat"
+
+    - name: Run the Java APP on Ubuntu machine
+      command: "java -jar {{ dest_path }}/target/spring-petclinic-2.7.0-SNAPSHOT.jar"
+      when: ansible_distribution=="Ubuntu"
+    
+    - name: Run the Java APP on RedHat machine
+      command: "java -jar {{ dest_path }}/target/spring-petclinic-2.7.0-SNAPSHOT.jar"
+      when: ansible_distribution=="RedHat"
